@@ -1,0 +1,548 @@
+-- Tải thư viện Rayfield UI
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- Tạo Cửa Sổ Menu
+local Window = Rayfield:CreateWindow({
+   Name = "Blox Fruits | Super Hub V9 FULL Ultimate",
+   LoadingTitle = "Đang Khởi Tạo Đầy Đủ Chức Năng...",
+   ConfigurationSaving = { Enabled = false },
+   Icon = 4483362458,
+   ToggleKey = Enum.KeyCode.K
+})
+
+-- Giá trị cấu hình tốc độ mặc định
+_G.FastAttackSpeed = 300 -- Tốc độ đánh (ms)
+_G.TweenSpeed = 350       -- Tốc độ bay Tween
+
+-- Tạo Tabs Chức Năng
+local SettingsTab = Window:CreateTab("Tốc Độ / Speed", 4483362458)
+local MainTab = Window:CreateTab("Auto Farm", 4483362458)
+local EventTab = Window:CreateTab("Sea & Dragon Event", 4483362458)
+local V4Tab = Window:CreateTab("Race V4 & Mirage", 4483362458)
+local WeaponTab = Window:CreateTab("Weapons & Quests", 4483362458)
+local MaterialTab = Window:CreateTab("Materials", 4483362458)
+local FruitTab = Window:CreateTab("Fruit / Items", 4483362458)
+local ShopTab = Window:CreateTab("Shop & Fruits", 4483362458)
+local IslandTab = Window:CreateTab("Island Teleport", 4483362458)
+local ESPTab = Window:CreateTab("ESP Visuals", 4483362458)
+local MiscTab = Window:CreateTab("Misc / Utility", 4483362458)
+
+-- ==========================================
+-- CÁC HÀM BỔ TRỢ (UTILITIES)
+-- ==========================================
+local LocalPlayer = game.Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+
+local function TweenTo(targetCFrame)
+    local Distance = (LocalPlayer.Character.HumanoidRootPart.Position - targetCFrame.Position).Magnitude
+    local TweenService = game:GetService("TweenService")
+    local TweenInfo = TweenInfo.new(Distance / _G.TweenSpeed, Enum.EasingStyle.Linear)
+    local Tween = TweenService:Create(LocalPlayer.Character.HumanoidRootPart, TweenInfo, {CFrame = targetCFrame})
+    Tween:Play()
+    return Tween
+end
+
+-- Anti-AFK
+LocalPlayer.Idled:Connect(function()
+    game:GetService("VirtualUser"):CaptureController()
+    game:GetService("VirtualUser"):ClickButton2(Vector2.new(0, 0))
+end)
+
+-- ==========================================
+-- TAB: TỐC ĐỘ / CUSTOM SPEED
+-- ==========================================
+SettingsTab:CreateSlider({
+   Name = "Tốc Độ Bay Tween (1 - 700)",
+   Range = {1, 700},
+   Increment = 1,
+   Suffix = "Speed",
+   CurrentValue = 350,
+   Callback = function(Value)
+      _G.TweenSpeed = Value
+   end,
+})
+
+SettingsTab:CreateSlider({
+   Name = "Tốc Độ Fast Attack (200 - 700ms)",
+   Range = {200, 700},
+   Increment = 10,
+   Suffix = "ms",
+   CurrentValue = 300,
+   Callback = function(Value)
+      _G.FastAttackSpeed = Value
+   end,
+})
+
+-- ==========================================
+-- TAB 1: AUTO FARM
+-- ==========================================
+_G.AutoFarmLevel = false
+MainTab:CreateToggle({
+   Name = "Auto Farm Level",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoFarmLevel = Value
+      task.spawn(function()
+         while _G.AutoFarmLevel do
+            task.wait()
+            pcall(function()
+               for _, v in pairs(Workspace.Enemies:GetChildren()) do
+                  if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                     repeat
+                        task.wait(_G.FastAttackSpeed / 1000)
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = v.HumanoidRootPart.CFrame * CFrame.new(0, 7, 0)
+                        game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
+                     until not _G.AutoFarmLevel or not v:FindFirstChild("Humanoid") or v.Humanoid.Health <= 0
+                  end
+               end
+            end)
+         end
+      end)
+   end,
+})
+
+_G.AutoBoss = false
+MainTab:CreateToggle({
+   Name = "Auto Farm Boss",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoBoss = Value
+      task.spawn(function()
+         while _G.AutoBoss do
+            task.wait(0.5)
+            pcall(function()
+               for _, v in pairs(Workspace.Enemies:GetChildren()) do
+                  if v:FindFirstChild("Humanoid") and v.Humanoid.MaxHealth > 50000 and v.Humanoid.Health > 0 then
+                     repeat
+                        task.wait(_G.FastAttackSpeed / 1000)
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = v.HumanoidRootPart.CFrame * CFrame.new(0, 8, 0)
+                        game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
+                     until not _G.AutoBoss or v.Humanoid.Health <= 0
+                  end
+               end
+            end)
+         end
+      end)
+   end,
+})
+
+_G.AutoTweenChest = false
+MainTab:CreateToggle({
+   Name = "Auto Tween Farm Chest",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoTweenChest = Value
+      task.spawn(function()
+         while _G.AutoTweenChest do
+            task.wait(0.2)
+            pcall(function()
+               for _, v in pairs(Workspace:GetChildren()) do
+                  if v.Name:find("Chest") and v:IsA("Part") then
+                     TweenTo(v.CFrame)
+                     repeat task.wait(0.1) until not _G.AutoTweenChest or (LocalPlayer.Character.HumanoidRootPart.Position - v.Position).Magnitude < 5
+                  end
+               end
+            end)
+         end
+      end)
+   end,
+})
+
+_G.AutoTPResetChest = false
+MainTab:CreateToggle({
+   Name = "Auto Teleport Reset Farm Chest",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoTPResetChest = Value
+      task.spawn(function()
+         while _G.AutoTPResetChest do
+            task.wait(0.1)
+            local ChestFound = false
+            pcall(function()
+               for _, v in pairs(Workspace:GetChildren()) do
+                  if v.Name:find("Chest") and v:IsA("Part") then
+                     ChestFound = true
+                     LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
+                     task.wait(0.2)
+                  end
+               end
+            end)
+            if not ChestFound then
+               LocalPlayer.Character.Humanoid.Health = 0
+               task.wait(4)
+            end
+         end
+      end)
+   end,
+})
+
+-- ==========================================
+-- TAB 2: SEA & DRAGON EVENT
+-- ==========================================
+_G.AutoSeaEvent = false
+EventTab:CreateToggle({
+   Name = "Auto Farm Sea Events (Sea Beast, Terror Shark, Ship)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoSeaEvent = Value
+      task.spawn(function()
+         while _G.AutoSeaEvent do
+            task.wait()
+            pcall(function()
+               for _, v in pairs(Workspace.SeaBeasts:GetChildren()) do
+                  if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                     repeat
+                        task.wait(_G.FastAttackSpeed / 1000)
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = v.HumanoidRootPart.CFrame * CFrame.new(0, 20, 0)
+                        game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
+                     until not _G.AutoSeaEvent or v.Humanoid.Health <= 0
+                  end
+               end
+            end)
+         end
+      end)
+   end,
+})
+
+_G.AutoDragonEvent = false
+EventTab:CreateToggle({
+   Name = "Auto Dragon Event",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoDragonEvent = Value
+      task.spawn(function()
+         while _G.AutoDragonEvent do
+            task.wait()
+            pcall(function()
+               for _, v in pairs(Workspace.Enemies:GetChildren()) do
+                  if v.Name:find("Dragon") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                     repeat
+                        task.wait(_G.FastAttackSpeed / 1000)
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = v.HumanoidRootPart.CFrame * CFrame.new(0, 8, 0)
+                        game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
+                     until not _G.AutoDragonEvent or v.Humanoid.Health <= 0
+                  end
+               end
+            end)
+         end
+      end)
+   end,
+})
+
+_G.AutoBone = false
+EventTab:CreateToggle({
+   Name = "Auto Farm Bone (Sea 3)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoBone = Value
+      task.spawn(function()
+         while _G.AutoBone do
+            task.wait()
+            pcall(function()
+               for _, v in pairs(Workspace.Enemies:GetChildren()) do
+                  if (v.Name == "Reborn Skeleton" or v.Name == "Living Zombie" or v.Name == "Demonic Soul" or v.Name == "Posseessed Mummy") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                     repeat
+                        task.wait(_G.FastAttackSpeed / 1000)
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = v.HumanoidRootPart.CFrame * CFrame.new(0, 7, 0)
+                        game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
+                     until not _G.AutoBone or v.Humanoid.Health <= 0
+                  end
+               end
+            end)
+         end
+      end)
+   end,
+})
+
+_G.AutoCakePrince = false
+EventTab:CreateToggle({
+   Name = "Auto Cake Prince / Dough King Mobs",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoCakePrince = Value
+      task.spawn(function()
+         while _G.AutoCakePrince do
+            task.wait()
+            pcall(function()
+               local Boss = Workspace.Enemies:FindFirstChild("Cake Prince") or Workspace.Enemies:FindFirstChild("Dough King")
+               if Boss and Boss:FindFirstChild("Humanoid") and Boss.Humanoid.Health > 0 then
+                  repeat
+                     task.wait(_G.FastAttackSpeed / 1000)
+                     LocalPlayer.Character.HumanoidRootPart.CFrame = Boss.HumanoidRootPart.CFrame * CFrame.new(0, 8, 0)
+                     game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
+                  until not _G.AutoCakePrince or not Boss:FindFirstChild("Humanoid") or Boss.Humanoid.Health <= 0
+               else
+                  for _, v in pairs(Workspace.Enemies:GetChildren()) do
+                     if (v.Name:find("Cake") or v.Name:find("Baking")) and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                        repeat
+                           task.wait(_G.FastAttackSpeed / 1000)
+                           LocalPlayer.Character.HumanoidRootPart.CFrame = v.HumanoidRootPart.CFrame * CFrame.new(0, 7, 0)
+                           game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
+                        until not _G.AutoCakePrince or v.Humanoid.Health <= 0
+                     end
+                  end
+               end
+            end)
+         end
+      end)
+   end,
+})
+
+-- ==========================================
+-- TAB 3: RACE V4 & MIRAGE ISLAND
+-- ==========================================
+_G.AutoMirage = false
+V4Tab:CreateToggle({
+   Name = "Auto Treo Đảo Bí Ẩn (Mirage Island Finder)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoMirage = Value
+      task.spawn(function()
+         while _G.AutoMirage do
+            task.wait(1)
+            pcall(function()
+               local Mirage = Workspace.Locations:FindFirstChild("Mirage Island") or Workspace:FindFirstChild("Mirage Island")
+               if Mirage then
+                  TweenTo(Mirage.CFrame * CFrame.new(0, 50, 0))
+               end
+            end)
+         end
+      end)
+   end,
+})
+
+_G.AutoRaceV4 = false
+V4Tab:CreateToggle({
+   Name = "Auto Tộc V4 (Auto Skill & Temple Check)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoRaceV4 = Value
+      task.spawn(function()
+         while _G.AutoRaceV4 do
+            task.wait(0.5)
+            pcall(function()
+               if LocalPlayer.Character:FindFirstChild("RaceEnergy") and LocalPlayer.Character.RaceEnergy.Value >= 100 then
+                  game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.Y, false, game)
+                  task.wait(0.1)
+                  game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.Y, false, game)
+               end
+               ReplicatedStorage.Remotes.CommF_:InvokeServer("TempleOfTime", "Check")
+            end)
+         end
+      end)
+   end,
+})
+
+-- ==========================================
+-- TAB 4: WEAPONS & QUESTS
+-- ==========================================
+_G.AutoSaber = false
+WeaponTab:CreateToggle({
+   Name = "Auto Saber",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoSaber = Value
+      task.spawn(function()
+         while _G.AutoSaber do
+            task.wait(0.5)
+            pcall(function()
+               local Boss = Workspace.Enemies:FindFirstChild("Saber Expert")
+               if Boss and Boss:FindFirstChild("Humanoid") and Boss.Humanoid.Health > 0 then
+                  repeat
+                     task.wait(_G.FastAttackSpeed / 1000)
+                     LocalPlayer.Character.HumanoidRootPart.CFrame = Boss.HumanoidRootPart.CFrame * CFrame.new(0, 8, 0)
+                     game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
+                  until not _G.AutoSaber or Boss.Humanoid.Health <= 0
+               else
+                  ReplicatedStorage.Remotes.CommF_:InvokeServer("ProSaber", "RichGuy")
+               end
+            end)
+         end
+      end)
+   end,
+})
+
+_G.AutoTushita = false
+WeaponTab:CreateToggle({
+   Name = "Auto Tushita Quest",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoTushita = Value
+      task.spawn(function()
+         while _G.AutoTushita do
+            task.wait(0.5)
+            pcall(function()
+               local Boss = Workspace.Enemies:FindFirstChild("Longma")
+               if Boss and Boss:FindFirstChild("Humanoid") and Boss.Humanoid.Health > 0 then
+                  repeat
+                     task.wait(_G.FastAttackSpeed / 1000)
+                     LocalPlayer.Character.HumanoidRootPart.CFrame = Boss.HumanoidRootPart.CFrame * CFrame.new(0, 8, 0)
+                     game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
+                  until not _G.AutoTushita or Boss.Humanoid.Health <= 0
+               else
+                  ReplicatedStorage.Remotes.CommF_:InvokeServer("TushitaQuest")
+               end
+            end)
+         end
+      end)
+   end,
+})
+
+_G.AutoCDK = false
+WeaponTab:CreateToggle({
+   Name = "Auto CDK Quest",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoCDK = Value
+      task.spawn(function()
+         while _G.AutoCDK do
+            task.wait(1)
+            pcall(function()
+               ReplicatedStorage.Remotes.CommF_:InvokeServer("CDKQuest", "Check")
+            end)
+         end
+      end)
+   end,
+})
+
+-- ==========================================
+-- TAB 5: MATERIALS
+-- ==========================================
+local MaterialData = {
+   ["Fish Tail"] = {"Fishman Warrior", "Fishman Commando"},
+   ["Magma Ore"] = {"Military Soldier", "Military Spy", "Magma Admiral"},
+   ["Angel Wings"] = {"God's Guard", "Shanda", "Royal Squad"},
+   ["Leather / Scrap Metal"] = {"Pirate", "Brute"},
+   ["Dragon Scale"] = {"Dragon Crew Warrior", "Dragon Crew Archer"},
+   ["Mini Tusk"] = {"Mythological Pirate"},
+   ["Conjured Cocoa"] = {"Chocolate Bar Battler", "Sweet Thief"},
+   ["Demonic Wisp"] = {"Demonic Soul"}
+}
+local SelectedMaterialMobs = {}
+
+MaterialTab:CreateDropdown({
+   Name = "Chọn Nguyên Liệu Cần Farm",
+   Options = {"Fish Tail", "Magma Ore", "Angel Wings", "Leather / Scrap Metal", "Dragon Scale", "Mini Tusk", "Conjured Cocoa", "Demonic Wisp"},
+   CurrentOption = "Fish Tail",
+   MultipleOptions = false,
+   Callback = function(Option)
+      SelectedMaterialMobs = MaterialData[Option[1]] or MaterialData[Option]
+   end,
+})
+
+_G.AutoFarmMaterial = false
+MaterialTab:CreateToggle({
+   Name = "Bật Auto Farm Material",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoFarmMaterial = Value
+      task.spawn(function()
+         while _G.AutoFarmMaterial do
+            task.wait()
+            pcall(function()
+               if SelectedMaterialMobs and #SelectedMaterialMobs > 0 then
+                  for _, v in pairs(Workspace.Enemies:GetChildren()) do
+                     if table.find(SelectedMaterialMobs, v.Name) and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                        repeat
+                           task.wait(_G.FastAttackSpeed / 1000)
+                           LocalPlayer.Character.HumanoidRootPart.CFrame = v.HumanoidRootPart.CFrame * CFrame.new(0, 7, 0)
+                           game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
+                        until not _G.AutoFarmMaterial or not v:FindFirstChild("Humanoid") or v.Humanoid.Health <= 0
+                     end
+                  end
+               end
+            end)
+         end
+      end)
+   end,
+})
+
+-- ==========================================
+-- TAB 6: FRUIT / ITEMS
+-- ==========================================
+_G.AutoStoreFruit = false
+FruitTab:CreateToggle({
+   Name = "Auto Store Fruit",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoStoreFruit = Value
+      task.spawn(function()
+         while _G.AutoStoreFruit do
+            task.wait(1)
+            pcall(function()
+               for _, v in pairs(LocalPlayer.Backpack:GetChildren()) do
+                  if v:IsA("Tool") and v.Name:find("Fruit") then
+                     ReplicatedStorage.Remotes.CommF_:InvokeServer("StoreFruit", v.Name, v)
+                  end
+               end
+            end)
+         end
+      end)
+   end,
+})
+
+_G.FruitRain = false
+FruitTab:CreateToggle({
+   Name = "Auto Collect Fruit (Fruit Rain Real)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.FruitRain = Value
+      task.spawn(function()
+         while _G.FruitRain do
+            task.wait(0.5)
+            pcall(function()
+               for _, v in pairs(Workspace:GetChildren()) do
+                  if v:IsA("Tool") or (v:IsA("Model") and v.Name:find("Fruit")) then
+                     local Handle = v:FindFirstChild("Handle") or v:FindFirstChildOfClass("Part")
+                     if Handle then
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = Handle.CFrame
+                        task.wait(0.2)
+                        ReplicatedStorage.Remotes.CommF_:InvokeServer("StoreFruit", v.Name, v)
+                     end
+                  end
+               end
+            end)
+         end
+      end)
+   end,
+})
+
+-- ==========================================
+-- TAB 7: SHOP & FRUITS
+-- ==========================================
+ShopTab:CreateButton({
+   Name = "Mở Shop Trái Thường (Normal Fruits)",
+   Callback = function()
+      ReplicatedStorage.Remotes.CommF_:InvokeServer("GetFruits")
+      Rayfield:Notify({Title = "Fruit Shop", Content = "Đã mở danh sách Trái Ác Quỷ đang bán!", Duration = 3})
+   end,
+})
+
+ShopTab:CreateButton({
+   Name = "Mở Shop Trái Blox Ascend",
+   Callback = function()
+      pcall(function()
+         ReplicatedStorage.Remotes.CommF_:InvokeServer("AscendFruitShop")
+         ReplicatedStorage.Remotes.CommF_:InvokeServer("GetAscendedFruits")
+      end)
+      Rayfield:Notify({Title = "Ascend Shop", Content = "Đã gọi Remote Shop Ascend!", Duration = 3})
+   end,
+})
+
+ShopTab:CreateButton({
+   Name = "Mua Random Trái (Gacha Blox Fruit)",
+   Callback = function()
+      ReplicatedStorage.Remotes.CommF_:InvokeServer("Cousin", "Buy")
+   end,
+})
+
+-- ==========================================
+-- TAB 8: ISLAND TELEPORT (FULL SEA 1, 2, 3)
+-- ==========================================
+local Sea1Islands = {
+   ["Starter Pirate Island"] = CFrame.new(1089.4, 16.4, 1419.1),
+   ["Jungle"] = CFrame.new(-1611.7, 36.8, 148.8),
+   ["Pirate Village"] = CFrame.new(-1131.6, 4.8, 3855.9),
+   ["Desert"] = CFrame.new(899.7, 6.4, 4388.7),
+   ["Middle Town"] = CFra
