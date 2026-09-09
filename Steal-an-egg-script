@@ -1,0 +1,416 @@
+-- ==========================================
+-- SÓC NGU HUB - STEAL AN EGG (FULL LOGICAL & ALL EGGS)
+-- ==========================================
+
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Sóc Ngu Hub | Steal an Egg Mobile",
+   LoadingTitle = "SÓC NGU HUB",
+   LoadingSubtitle = "Loading Complete Egg Database & Logic...",
+   ConfigurationSaving = { Enabled = false },
+   KeySystem = false
+})
+
+-- TABS GIAO DIỆN (TIẾNG ANH CHỮ TO - TIẾNG VIỆT CHỮ NHỎ)
+local CharacterTab = Window:CreateTab("Character Settings", "user")
+local ESPTab = Window:CreateTab("Egg Visuals & ESP", "eye")
+local FarmTab = Window:CreateTab("Auto Farm System", "zap")
+local ShopTab = Window:CreateTab("Game Shop", "shopping-cart")
+
+-- BIẾN TOÀN CỤC (GLOBAL VARIABLES)
+_G.CustomSpeed = 16
+_G.CustomJump = 50
+_G.LockSpeed = false
+_G.EggESP = false
+_G.AutoStealEgg = false
+_G.AutoStealSelected = false
+_G.SelectedEgg = "Basic Egg"
+_G.AutoSell = false
+_G.TweenSpeed = 100
+_G.AutoBuyBasket = false
+_G.AutoBuyPets = false
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- DANH SÁCH CHI TIẾT TÊN TẤT CẢ CÁC QUẢ TRỨNG TRONG GAME
+local AllEggNames = {
+   "Basic Egg",
+   "Spotted Egg",
+   "Striped Egg",
+   "Golden Egg",
+   "Diamond Egg",
+   "Ruby Egg",
+   "Emerald Egg",
+   "Rainbow Egg",
+   "Galaxy Egg",
+   "Dragon Egg",
+   "Dino Egg",
+   "Unicorn Egg",
+   "Magma Egg",
+   "Ice Egg",
+   "Shadow Egg",
+   "Light Egg",
+   "Alien Egg",
+   "Cyber Egg",
+   "Pixel Egg",
+   "Secret Egg"
+}
+
+-- ==========================================
+-- HÀM LOGIC XỬ LÝ NÂNG CAO (ADVANCED LOGIC)
+-- ==========================================
+
+-- 1. Logic Tween di chuyển mượt
+local function TweenTo(targetCFrame)
+   if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+      local hrp = LocalPlayer.Character.HumanoidRootPart
+      local distance = (hrp.Position - targetCFrame.Position).Magnitude
+      local tweenInfo = TweenInfo.new(distance / _G.TweenSpeed, Enum.EasingStyle.Linear)
+      local tween = TweenService:Create(hrp, tweenInfo, {CFrame = targetCFrame})
+      tween:Play()
+      return tween
+   end
+end
+
+-- 2. Logic tìm quả trứng bất kỳ gần nhất
+local function GetNearestEgg()
+   local nearestEgg = nil
+   local shortestDistance = math.huge
+
+   if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+      local myPos = LocalPlayer.Character.HumanoidRootPart.Position
+
+      for _, obj in pairs(workspace:GetDescendants()) do
+         if obj.Name:lower():find("egg") and (obj:IsA("Model") or obj:IsA("BasePart")) then
+            local part = obj:IsA("BasePart") and obj or obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+            if part then
+               local dist = (part.Position - myPos).Magnitude
+               if dist < shortestDistance then
+                  shortestDistance = dist
+                  nearestEgg = part
+               end
+            end
+         end
+      end
+   end
+   return nearestEgg
+end
+
+-- 3. Logic tìm quả trứng chính xác theo tên cụ thể trong danh sách
+local function GetSpecificEggByName(eggName)
+   if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+      for _, obj in pairs(workspace:GetDescendants()) do
+         if (obj.Name:lower() == eggName:lower() or obj.Name:lower():find(eggName:lower())) and (obj:IsA("Model") or obj:IsA("BasePart")) then
+            return obj:IsA("BasePart") and obj or obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+         end
+      end
+   end
+   return nil
+end
+
+-- 4. Logic khóa WalkSpeed & JumpPower liên tục
+RunService.Stepped:Connect(function()
+   pcall(function()
+      if _G.LockSpeed and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+         LocalPlayer.Character.Humanoid.WalkSpeed = _G.CustomSpeed
+         LocalPlayer.Character.Humanoid.JumpPower = _G.CustomJump
+      end
+   end)
+end)
+
+-- ==========================================
+-- TAB 1: CHARACTER SETTINGS (CẤU HÌNH NHÂN VẬT)
+-- ==========================================
+
+CharacterTab:CreateSlider({
+   Name = "WalkSpeed Slider\n(Thanh chỉnh tốc độ chạy)",
+   Range = {1, 1000},
+   Increment = 1,
+   Suffix = "Speed",
+   CurrentValue = 16,
+   Flag = "SpeedSlider",
+   Callback = function(Value)
+      _G.CustomSpeed = Value
+   end,
+})
+
+CharacterTab:CreateSlider({
+   Name = "JumpPower Slider\n(Thanh chỉnh độ cao nhảy)",
+   Range = {50, 1000},
+   Increment = 5,
+   Suffix = "Power",
+   CurrentValue = 50,
+   Flag = "JumpSlider",
+   Callback = function(Value)
+      _G.CustomJump = Value
+   end,
+})
+
+CharacterTab:CreateToggle({
+   Name = "Lock Speed & Jump Height\n(Khóa và duy trì tốc độ / độ nhảy)",
+   CurrentValue = false,
+   Flag = "LockSpeedToggle",
+   Callback = function(Value)
+      _G.LockSpeed = Value
+   end,
+})
+
+-- ==========================================
+-- TAB 2: EGG VISUALS & ESP (ĐỊNH VỊ & ESP TRỨNG)
+-- ==========================================
+
+ESPTab:CreateToggle({
+   Name = "Enable Egg ESP Visuals\n(Bật hiệu ứng định vị nhìn xuyên tường tất cả trứng)",
+   CurrentValue = false,
+   Flag = "EggESPToggle",
+   Callback = function(Value)
+      _G.EggESP = Value
+      
+      task.spawn(function()
+         while _G.EggESP do
+            task.wait(1.5)
+            pcall(function()
+               for _, obj in pairs(workspace:GetDescendants()) do
+                  if obj.Name:lower():find("egg") and (obj:IsA("Model") or obj:IsA("BasePart")) then
+                     local targetPart = obj:IsA("BasePart") and obj or obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+                     
+                     if targetPart and not targetPart:FindFirstChild("EggHighlight") then
+                        local highlight = Instance.new("Highlight")
+                        highlight.Name = "EggHighlight"
+                        highlight.Adornee = obj
+                        highlight.FillColor = Color3.fromRGB(255, 215, 0)
+                        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                        highlight.FillTransparency = 0.4
+                        highlight.Parent = targetPart
+
+                        local billboard = Instance.new("BillboardGui")
+                        billboard.Name = "EggNameTag"
+                        billboard.AlwaysOnTop = true
+                        billboard.Size = UDim2.new(0, 100, 0, 30)
+                        billboard.StudsOffset = Vector3.new(0, 3, 0)
+                        billboard.Parent = targetPart
+
+                        local label = Instance.new("TextLabel")
+                        label.Parent = billboard
+                        label.Size = UDim2.new(1, 0, 1, 0)
+                        label.Text = "🥚 " .. obj.Name
+                        label.TextColor3 = Color3.fromRGB(255, 255, 255)
+                        label.TextScaled = true
+                        label.BackgroundTransparency = 1
+                     end
+                  end
+               end
+            end)
+         end
+
+         if not _G.EggESP then
+            for _, obj in pairs(workspace:GetDescendants()) do
+               if obj:FindFirstChild("EggHighlight") then obj.EggHighlight:Destroy() end
+               if obj:FindFirstChild("EggNameTag") then obj.EggNameTag:Destroy() end
+            end
+         end
+      end)
+   end,
+})
+
+-- ==========================================
+-- TAB 3: AUTO FARM SYSTEM (HỆ THỐNG AUTO FARM)
+-- ==========================================
+
+FarmTab:CreateSlider({
+   Name = "Tween Flight Speed\n(Tốc độ bay tự động khi farm)",
+   Range = {50, 500},
+   Increment = 10,
+   Suffix = "Speed",
+   CurrentValue = 100,
+   Flag = "TweenSpeedSlider",
+   Callback = function(Value)
+      _G.TweenSpeed = Value
+   end,
+})
+
+FarmTab:CreateDropdown({
+   Name = "Select Specific Egg\n(Chọn tên chính xác quả trứng bạn muốn trộm)",
+   Options = AllEggNames,
+   CurrentOption = {"Basic Egg"},
+   MultipleOptions = false,
+   Flag = "EggDropdown",
+   Callback = function(Option)
+      _G.SelectedEgg = Option[1]
+   end,
+})
+
+FarmTab:CreateToggle({
+   Name = "Auto Steal Selected Egg\n(Tự động tìm và trộm chính xác quả trứng đã chọn ở trên)",
+   CurrentValue = false,
+   Flag = "AutoStealSelectedToggle",
+   Callback = function(Value)
+      _G.AutoStealSelected = Value
+      task.spawn(function()
+         while _G.AutoStealSelected do
+            task.wait(0.5)
+            pcall(function()
+               local eggPart = GetSpecificEggByName(_G.SelectedEgg)
+               if eggPart then
+                  local tw = TweenTo(eggPart.CFrame * CFrame.new(0, 2, 0))
+                  if tw then tw.Completed:Wait() end
+                  
+                  for _, prompt in pairs(eggPart.Parent:GetDescendants()) do
+                     if prompt:IsA("ProximityPrompt") then
+                        fireproximityprompt(prompt)
+                     end
+                  end
+               end
+            end)
+         end
+      end)
+   end,
+})
+
+FarmTab:CreateToggle({
+   Name = "Auto Steal Nearest Egg\n(Tự động trộm quả trứng bất kỳ nằm gần vị trí của bạn nhất)",
+   CurrentValue = false,
+   Flag = "AutoStealToggle",
+   Callback = function(Value)
+      _G.AutoStealEgg = Value
+      
+      task.spawn(function()
+         while _G.AutoStealEgg do
+            task.wait(0.5)
+            pcall(function()
+               local eggPart = GetNearestEgg()
+               if eggPart then
+                  local tw = TweenTo(eggPart.CFrame * CFrame.new(0, 2, 0))
+                  if tw then tw.Completed:Wait() end
+                  
+                  for _, prompt in pairs(eggPart.Parent:GetDescendants()) do
+                     if prompt:IsA("ProximityPrompt") then
+                        fireproximityprompt(prompt)
+                     end
+                  end
+               end
+            end)
+         end
+      end)
+   end,
+})
+
+FarmTab:CreateToggle({
+   Name = "Auto Transport To Sell Area\n(Tự động bay về bệ bán trứng khi thu thập xong)",
+   CurrentValue = false,
+   Flag = "AutoSellToggle",
+   Callback = function(Value)
+      _G.AutoSell = Value
+      
+      task.spawn(function()
+         while _G.AutoSell do
+            task.wait(2)
+            pcall(function()
+               for _, obj in pairs(workspace:GetDescendants()) do
+                  if obj.Name:lower():find("sell") and (obj:IsA("BasePart") or obj:IsA("Model")) then
+                     local targetPart = obj:IsA("BasePart") and obj or obj.PrimaryPart
+                     if targetPart then
+                        local tw = TweenTo(targetPart.CFrame * CFrame.new(0, 3, 0))
+                        if tw then tw.Completed:Wait() end
+                        break
+                     end
+                  end
+               end
+            end)
+         end
+      end)
+   end,
+})
+
+-- ==========================================
+-- TAB 4: GAME SHOP (CỬA HÀNG GAME & MUA ĐỒ)
+-- ==========================================
+
+ShopTab:CreateButton({
+   Name = "Purchase Common Egg Basket\n(Mua Giỏ Đựng Trứng Thường)",
+   Callback = function()
+      pcall(function()
+         ReplicatedStorage:FindFirstChild("BuyItem", true):FireServer("Common Basket")
+      end)
+   end,
+})
+
+ShopTab:CreateButton({
+   Name = "Purchase Golden Egg Basket\n(Mua Giỏ Đựng Trứng Vàng)",
+   Callback = function()
+      pcall(function()
+         ReplicatedStorage:FindFirstChild("BuyItem", true):FireServer("Golden Basket")
+      end)
+   end,
+})
+
+ShopTab:CreateToggle({
+   Name = "Auto Buy Baskets & Upgrades\n(Tự động nâng cấp và mua giỏ đựng trứng mới khi đủ tiền)",
+   CurrentValue = false,
+   Flag = "AutoBuyBasketToggle",
+   Callback = function(Value)
+      _G.AutoBuyBasket = Value
+      task.spawn(function()
+         while _G.AutoBuyBasket do
+            task.wait(3)
+            pcall(function()
+               ReplicatedStorage:FindFirstChild("BuyUpgrade", true):FireServer("MaxBasket")
+            end)
+         end
+      end)
+   end,
+})
+
+ShopTab:CreateToggle({
+   Name = "Auto Open / Hatch Pets\n(Tự động mua và mở Trứng/Pet hỗ trợ tăng chỉ số)",
+   CurrentValue = false,
+   Flag = "AutoBuyPetsToggle",
+   Callback = function(Value)
+      _G.AutoBuyPets = Value
+      task.spawn(function()
+         while _G.AutoBuyPets do
+            task.wait(2)
+            pcall(function()
+               ReplicatedStorage:FindFirstChild("BuyEgg", true):FireServer(_G.SelectedEgg)
+            end)
+         end
+      end)
+   end,
+})
+
+-- ==========================================
+-- NÚT FLOATING MOBILE (NÚT BẤM TÊN SÓC NGU DÀNH CHO ĐIỆN THOẠI)
+-- ==========================================
+pcall(function()
+    local CoreGui = game:GetService("CoreGui")
+    if CoreGui:FindFirstChild("SocNguMobileBtn") then CoreGui.SocNguMobileBtn:Destroy() end
+
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "SocNguMobileBtn"
+    ScreenGui.Parent = CoreGui
+
+    local Btn = Instance.new("TextButton")
+    Btn.Parent = ScreenGui
+    Btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    Btn.Position = UDim2.new(0.05, 0, 0.2, 0)
+    Btn.Size = UDim2.new(0, 50, 0, 50)
+    Btn.Text = "SÓC NGU"
+    Btn.TextColor3 = Color3.fromRGB(255, 200, 0)
+    Btn.TextSize = 10
+    Btn.Active = true
+    Btn.Draggable = true
+
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(1, 0)
+    Corner.Parent = Btn
+
+    Btn.MouseButton1Click:Connect(function()
+        game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.K, false, game)
+        game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.K, false, game)
+    end)
+end)
