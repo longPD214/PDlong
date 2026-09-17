@@ -1,0 +1,250 @@
+-- Tải UI Library từ Luarmor
+local Luarmor = loadstring(game:HttpGet("https://sdkapi-public.luarmor.net/library.lua"))()
+
+-- Kích hoạt Auto Fast Attack từ CheemBanana
+task.spawn(function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-Meoz/LuaCyder-Meoz/refs/heads/main/BF-CheemBanana.lua"))()
+    end)
+end)
+
+-- ANTI AFK SYSTEM (CHẠY ẨN CHỐNG KICK)
+task.spawn(function()
+    local Vu = game:GetService("VirtualUser")
+    game:GetService("Players").LocalPlayer.Idled:Connect(function()
+        Vu:CaptureController()
+        Vu:ClickButton2(Vector2.new())
+    end)
+end)
+
+-- Tạo Cửa sổ Menu "longturboTV hub"
+local Window = Luarmor:CreateWindow({
+    Name = "longturboTV hub",
+    LoadingTitle = "longturboTV hub - Blox Fruits",
+    LoadingSubtitle = "Script By longturboTV...",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "longturboTVhub",
+        FileName = "config"
+    }
+})
+
+-- ==========================================
+-- NÚT TRÒN TOGGLE UI (ICON RBXASSETID://266543268)
+-- ==========================================
+local ToggleGui = Instance.new("ScreenGui")
+local ToggleButton = Instance.new("ImageButton")
+local UICorner = Instance.new("UICorner")
+
+ToggleGui.Name = "longturboTV_ToggleGui"
+ToggleGui.Parent = game:GetService("CoreGui")
+ToggleGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+ToggleButton.Name = "ToggleButton"
+ToggleButton.Parent = ToggleGui
+ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+ToggleButton.Position = UDim2.new(0.12, 0, 0.15, 0)
+ToggleButton.Size = UDim2.new(0, 45, 0, 45)
+ToggleButton.Image = "rbxassetid://266543268"
+ToggleButton.Active = true
+ToggleButton.Draggable = true
+
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = ToggleButton
+
+ToggleButton.MouseButton1Click:Connect(function()
+    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.RightControl, false, game)
+end)
+
+-- ==========================================
+-- TẠO TABS VÀ TÍNH NĂNG FARM
+-- ==========================================
+local FarmTab = Window:CreateTab("farm level")
+local SeaTab = Window:CreateTab("Sea Quests")
+
+_G.AutoFarmLevel = false
+_G.AutoQuest = false
+_G.AutoSea1ToSea2 = false
+_G.AutoSea2ToSea3 = false
+
+-- BẢNG DANH SÁCH QUÁI & QUEST CHUẨN (UPDATE 30)
+local QuestData = {
+    -- SEA 1
+    {MinLvl = 1, MaxLvl = 14, QuestName = "BanditQuest1", QuestLevel = 1, Mob = "Bandit"},
+    {MinLvl = 15, MaxLvl = 29, QuestName = "JungleQuest", QuestLevel = 1, Mob = "Monkey"},
+    {MinLvl = 30, MaxLvl = 39, QuestName = "JungleQuest", QuestLevel = 2, Mob = "Gorilla"},
+    {MinLvl = 40, MaxLvl = 59, QuestName = "BuggyQuest1", QuestLevel = 1, Mob = "Pirate"},
+    {MinLvl = 60, MaxLvl = 89, QuestName = "DesertQuest", QuestLevel = 1, Mob = "Desert Bandit"},
+    {MinLvl = 90, MaxLvl = 119, QuestName = "SnowQuest", QuestLevel = 1, Mob = "Snow Bandit"},
+    {MinLvl = 120, MaxLvl = 149, QuestName = "MarineQuest2", QuestLevel = 1, Mob = "Chief Petty Officer"},
+    {MinLvl = 150, MaxLvl = 189, QuestName = "SkyQuest", QuestLevel = 1, Mob = "Sky Bandit"},
+    {MinLvl = 190, MaxLvl = 224, QuestName = "PrisonerQuest", QuestLevel = 1, Mob = "Prisoner"},
+    {MinLvl = 225, MaxLvl = 299, QuestName = "ColosseumQuest", QuestLevel = 1, Mob = "Toga Warrior"},
+    {MinLvl = 300, MaxLvl = 374, QuestName = "MagmaQuest", QuestLevel = 1, Mob = "Military Soldier"},
+    {MinLvl = 375, MaxLvl = 449, QuestName = "FishmanQuest", QuestLevel = 1, Mob = "Fishman Warrior"},
+    {MinLvl = 450, MaxLvl = 524, QuestName = "SkyQuest2", QuestLevel = 1, Mob = "God's Guard"},
+    {MinLvl = 525, MaxLvl = 624, QuestName = "SkyQuest3", QuestLevel = 1, Mob = "Shanda"},
+    {MinLvl = 625, MaxLvl = 699, QuestName = "FountainQuest", QuestLevel = 1, Mob = "Pirate Billionaire"},
+    
+    -- SEA 2
+    {MinLvl = 700, MaxLvl = 724, QuestName = "Area1Quest", QuestLevel = 1, Mob = "Raider"},
+    {MinLvl = 725, MaxLvl = 774, QuestName = "Area1Quest", QuestLevel = 2, Mob = "Mercenary"},
+    {MinLvl = 775, MaxLvl = 874, QuestName = "Area2Quest", QuestLevel = 1, Mob = "Swan Pirate"},
+    {MinLvl = 875, MaxLvl = 924, QuestName = "MarineQuest3", QuestLevel = 1, Mob = "Marine Lieutenant"},
+    {MinLvl = 925, MaxLvl = 999, QuestName = "GraveyardQuest", QuestLevel = 1, Mob = "Zombie"},
+    {MinLvl = 1000, MaxLvl = 1099, QuestName = "SnowMountainQuest", QuestLevel = 1, Mob = "Snow Trooper"},
+    {MinLvl = 1100, MaxLvl = 1249, QuestName = "IceSideQuest", QuestLevel = 1, Mob = "Lab Subordinate"},
+    {MinLvl = 1250, MaxLvl = 1349, QuestName = "ShipQuest1", QuestLevel = 1, Mob = "Ship Deckhand"},
+    {MinLvl = 1350, MaxLvl = 1424, QuestName = "FrostQuest", QuestLevel = 1, Mob = "Arctic Warrior"},
+    {MinLvl = 1425, MaxLvl = 1499, QuestName = "ForgottenQuest", QuestLevel = 1, Mob = "Water Fighter"},
+    
+    -- SEA 3
+    {MinLvl = 1500, MaxLvl = 1574, QuestName = "PiratePortQuest", QuestLevel = 1, Mob = "Pirate Millionaire"},
+    {MinLvl = 1575, MaxLvl = 1699, QuestName = "AmazonQuest", QuestLevel = 1, Mob = "Pistol Billionaire"},
+    {MinLvl = 1700, MaxLvl = 1824, QuestName = "MarineTreeQuest", QuestLevel = 1, Mob = "Marine Commodore"},
+    {MinLvl = 1825, MaxLvl = 1899, QuestName = "DeepForestIsland1Quest", QuestLevel = 1, Mob = "Fishman Raider"},
+    {MinLvl = 1900, MaxLvl = 1999, QuestName = "DeepForestIsland2Quest", QuestLevel = 1, Mob = "Jungle Pirate"},
+    {MinLvl = 2000, MaxLvl = 2074, QuestName = "HauntedQuest1", QuestLevel = 1, Mob = "Reborn Skeleton"},
+    {MinLvl = 2075, MaxLvl = 2200, QuestName = "HauntedQuest2", QuestLevel = 1, Mob = "Living Zombie"},
+    {MinLvl = 2200, MaxLvl = 2299, QuestName = "PeanutQuest", QuestLevel = 1, Mob = "Peanut Scout"},
+    {MinLvl = 2300, MaxLvl = 2399, QuestName = "IceCreamQuest", QuestLevel = 1, Mob = "Ice Cream Chef"},
+    {MinLvl = 2400, MaxLvl = 2474, QuestName = "TikiQuest1", QuestLevel = 1, Mob = "Isle Outlaw"},
+    {MinLvl = 2475, MaxLvl = 2549, QuestName = "TikiQuest2", QuestLevel = 1, Mob = "Island Boy"},
+    {MinLvl = 2550, MaxLvl = 2649, QuestName = "TikiQuest3", QuestLevel = 1, Mob = "Sun-kissed Warrior"},
+    {MinLvl = 2650, MaxLvl = 2800, QuestName = "MagnetIslandQuest1", QuestLevel = 1, Mob = "Magnetic Scrapper"}
+}
+
+local function CheckAndGetQuest()
+    local level = game.Players.LocalPlayer.Data.Level.Value
+    local currentQuest
+    
+    for _, data in ipairs(QuestData) do
+        if level >= data.MinLvl and level <= data.MaxLvl then
+            currentQuest = data
+            break
+        end
+    end
+
+    if currentQuest then
+        if _G.AutoQuest and not game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible then
+            local args = {[1] = "StartQuest", [2] = currentQuest.QuestName, [3] = currentQuest.QuestLevel}
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
+        end
+        return currentQuest.Mob
+    end
+    return "Bandit"
+end
+
+local function MagnetEnemies(targetPosition)
+    for _, enemy in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+        if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+            if (enemy.HumanoidRootPart.Position - targetPosition).Magnitude <= 350 then
+                enemy.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
+                enemy.HumanoidRootPart.CanCollide = false
+                enemy.Humanoid.WalkSpeed = 0
+            end
+        end
+    end
+end
+
+task.spawn(function()
+    while task.wait() do
+        if _G.AutoFarmLevel then
+            pcall(function()
+                local targetMobName = CheckAndGetQuest()
+                local player = game.Players.LocalPlayer
+                local character = player.Character or player.CharacterAdded:Wait()
+                local hrp = character:FindFirstChild("HumanoidRootPart")
+                
+                if hrp then
+                    for _, enemy in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                        if string.find(enemy.Name, targetMobName) and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+                            repeat
+                                task.wait()
+                                if not _G.AutoFarmLevel then break end
+                                
+                                CheckAndGetQuest()
+                                hrp.CFrame = enemy.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0)
+                                MagnetEnemies(enemy.HumanoidRootPart.Position)
+                                
+                                game:GetService("VirtualUser"):CaptureController()
+                                game:GetService("VirtualUser"):Button1Down(Vector2.new(0, 0))
+                            until not enemy or not enemy:FindFirstChild("Humanoid") or enemy.Humanoid.Health <= 0 or not _G.AutoFarmLevel
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+task.spawn(function()
+    while task.wait() do
+        if _G.AutoSea1ToSea2 then
+            pcall(function()
+                local level = game.Players.LocalPlayer.Data.Level.Value
+                if level >= 700 then
+                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("TalkMilitaryDetective")
+                    task.wait(1)
+                    
+                    local iceBoss = game:GetService("Workspace").Enemies:FindFirstChild("Ice Admiral")
+                    if iceBoss and iceBoss:FindFirstChild("HumanoidRootPart") then
+                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = iceBoss.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0)
+                        game:GetService("VirtualUser"):CaptureController()
+                        game:GetService("VirtualUser"):Button1Down(Vector2.new(0, 0))
+                    else
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("TravelMain")
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+task.spawn(function()
+    while task.wait() do
+        if _G.AutoSea2ToSea3 then
+            pcall(function()
+                local level = game.Players.LocalPlayer.Data.Level.Value
+                if level >= 1500 then
+                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("TalkKingRedHead")
+                    task.wait(1)
+                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("TravelDressrosa")
+                end
+            end)
+        end
+    end
+end)
+
+-- TOGGLES
+FarmTab:CreateToggle({
+    Name = "Auto Quest",
+    CurrentValue = false,
+    Callback = function(Value)
+        _G.AutoQuest = Value
+    end
+})
+
+FarmTab:CreateToggle({
+    Name = "Auto Farm Level (Magnet Update)",
+    CurrentValue = false,
+    Callback = function(Value)
+        _G.AutoFarmLevel = Value
+    end
+})
+
+SeaTab:CreateToggle({
+    Name = "Auto Quest Sea 1 -> Sea 2 (Lvl 700+)",
+    CurrentValue = false,
+    Callback = function(Value)
+        _G.AutoSea1ToSea2 = Value
+    end
+})
+
+SeaTab:CreateToggle({
+    Name = "Auto Quest Sea 2 -> Sea 3 (Lvl 1500+)",
+    CurrentValue = false,
+    Callback = function(Value)
+        _G.AutoSea2ToSea3 = Value
+    end
+})
