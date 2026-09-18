@@ -1,0 +1,238 @@
+-- ===================================================
+-- BACKEND LOGIC FULL - BLOX FRUITS UPDATE 30 (MAGNET)
+-- SCRIPT NAME: LONGTURBO HUB
+-- SPEED TWEEN: 190
+-- ===================================================
+
+repeat task.wait() until game:IsLoaded() and game.Players.LocalPlayer
+repeat task.wait() until game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+
+-- 1. BẢNG BIẾN TOÀN CỤC KẾT NỐI UI (LONGTURBO HUB)
+getgenv().LongTurboHub = {
+    -- Auto Farm Logic
+    AutoFarmLevel = false,
+    AutoFarmMagnetEvent = false, -- Săn quái Magnetized (XX:00)
+    AutoRollMagnetGacha = false, -- Quay Magnet Gacha ở Middletown (Zioles)
+    
+    -- Race V4 & Quests
+    AutoPullLever = false,
+    AutoRgbHaki = false,
+    
+    -- Systems
+    AutoStats = false,
+    SelectStat = "Melee",
+    AutoStoreFruit = false,
+    
+    -- Speed & TP Configuration
+    BypassTP = false,
+    TweenSpeed = 190, -- Tốc độ di chuyển chuẩn 190
+    FastAttack = true
+}
+
+-- 2. AUTO CHỌN HẢI QUÂN
+getgenv().Team = "Marines"
+task.spawn(function()
+    local p = game.Players.LocalPlayer
+    while task.wait(0.5) do
+        if not p.Team or p.Team.Name ~= "Marines" then
+            pcall(function()
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam", "Marines")
+            end)
+        else
+            break
+        end
+    end
+end)
+
+local LP = game.Players.LocalPlayer
+local RS = game:GetService("ReplicatedStorage")
+local WS = game:GetService("Workspace")
+local CommF = RS:WaitForChild("Remotes"):WaitForChild("CommF_")
+
+-- 3. BẢNG DỮ LIỆU QUEST UPDATE 30 (CẬP NHẬT TỌA ĐỘ REWORK & LEVEL MỚI)
+local QuestData = {
+    -- SEA 1 REWORK (1 - 700)
+    [1]    = {QuestName = "BanditQuest1", MobName = "Bandit", CFrameQuest = CFrame.new(1059.37, 16.45, 1550.42), CFrameMob = CFrame.new(1190, 16, 1600)},
+    [10]   = {QuestName = "JungleQuest", MobName = "Monkey", CFrameQuest = CFrame.new(-1598.08, 36.85, 153.38), CFrameMob = CFrame.new(-1610, 36, 140)},
+    [15]   = {QuestName = "JungleQuest", MobName = "Gorilla", CFrameQuest = CFrame.new(-1598.08, 36.85, 153.38), CFrameMob = CFrame.new(-1240, 6, -490)},
+    [30]   = {QuestName = "PirateQuest", MobName = "Pirate", CFrameQuest = CFrame.new(-1140.17, 4.75, 3827.41), CFrameMob = CFrame.new(-1200, 4, 3900)},
+    [60]   = {QuestName = "DesertQuest", MobName = "Desert Bandit", CFrameQuest = CFrame.new(894.48, 6.44, 4384.58), CFrameMob = CFrame.new(950, 6, 4400)},
+    [90]   = {QuestName = "SnowQuest", MobName = "Snow Bandit", CFrameQuest = CFrame.new(1385.74, 87.27, -1298.05), CFrameMob = CFrame.new(1280, 105, -1350)},
+    [120]  = {QuestName = "MarineQuest2", MobName = "Chief Marine", CFrameQuest = CFrame.new(-5039.58, 28.65, 4324.58), CFrameMob = CFrame.new(-4800, 20, 4300)},
+    [150]  = {QuestName = "SkyQuest", MobName = "Sky Bandit", CFrameQuest = CFrame.new(-4839.53, 717.67, -2619.44), CFrameMob = CFrame.new(-4950, 717, -2900)},
+    [190]  = {QuestName = "PrisonerQuest", MobName = "Prisoner", CFrameQuest = CFrame.new(530.8, 1.65, 474.1), CFrameMob = CFrame.new(480, 1, 550)},
+    [275]  = {QuestName = "ColosseumQuest", MobName = "Toga Warrior", CFrameQuest = CFrame.new(-1580, 7, -2980), CFrameMob = CFrame.new(-1800, 7, -3300)},
+    [375]  = {QuestName = "MagmaQuest", MobName = "Military Soldier", CFrameQuest = CFrame.new(-5310, 12, 8500), CFrameMob = CFrame.new(-5400, 12, 8800)},
+    [450]  = {QuestName = "FishmanQuest", MobName = "Fishman Warrior", CFrameQuest = CFrame.new(61100, 18, 1560), CFrameMob = CFrame.new(61000, 18, 1200)},
+    [625]  = {QuestName = "FountainQuest", MobName = "Galley Pirate", CFrameQuest = CFrame.new(5250, 38, 4050), CFrameMob = CFrame.new(5500, 38, 4000)},
+    
+    -- SEA 2 (700 - 1500)
+    [700]  = {QuestName = "Area1Quest", MobName = "Raider [Lv. 700]", CFrameQuest = CFrame.new(-425, 73, 1835), CFrameMob = CFrame.new(-800, 73, 1600)},
+    [875]  = {QuestName = "Area2Quest", MobName = "Swan Pirate [Lv. 875]", CFrameQuest = CFrame.new(638, 73, 918), CFrameMob = CFrame.new(850, 73, 1100)},
+    [1000] = {QuestName = "ZombieQuest", MobName = "Zombie [Lv. 1000]", CFrameQuest = CFrame.new(-5497, 48, -795), CFrameMob = CFrame.new(-5600, 48, -900)},
+    [1250] = {QuestName = "ShipQuest1", MobName = "Ship Deckhand [Lv. 1250]", CFrameQuest = CFrame.new(1038, 125, 32911), CFrameMob = CFrame.new(1150, 125, 33000)},
+    [1425] = {QuestName = "FrostQuest", MobName = "Ice Castle Warrior [Lv. 1425]", CFrameQuest = CFrame.new(5855, 28, -6270), CFrameMob = CFrame.new(6000, 28, -6200)},
+    
+    -- SEA 3 (1500 - 2800 MAX FARM MOB)
+    [1500] = {QuestName = "PiratePortQuest", MobName = "Pirate Port", CFrameQuest = CFrame.new(-290, 44, 5580), CFrameMob = CFrame.new(-350, 44, 5900)},
+    [1775] = {QuestName = "DeepForestIsland2Quest", MobName = "Jungle Pirate [Lv. 1775]", CFrameQuest = CFrame.new(-13233, 332, -7626), CFrameMob = CFrame.new(-13400, 332, -7800)},
+    [2000] = {QuestName = "HauntedQuest1", MobName = "Reborn Skeleton [Lv. 2000]", CFrameQuest = CFrame.new(-9480, 142, 5520), CFrameMob = CFrame.new(-9600, 142, 5700)},
+    [2200] = {QuestName = "PeanutQuest", MobName = "Peanut Scout [Lv. 2200]", CFrameQuest = CFrame.new(-2120, 38, -10190), CFrameMob = CFrame.new(-2000, 38, -10300)},
+    [2450] = {QuestName = "ChocolateQuest1", MobName = "Cocoa Warrior [Lv. 2450]", CFrameQuest = CFrame.new(285, 24, -12540), CFrameMob = CFrame.new(400, 24, -12600)},
+    [2600] = {QuestName = "TikiQuest1", MobName = "Sun-kissed Warrior [Lv. 2600]", CFrameQuest = CFrame.new(-16234, 9, 412), CFrameMob = CFrame.new(-16400, 9, 500)},
+    [2800] = {QuestName = "TikiQuest2", MobName = "Isle Outlaw [Lv. 2800]", CFrameQuest = CFrame.new(-16500, 50, 300), CFrameMob = CFrame.new(-16700, 50, 400)}
+}
+
+-- 4. HÀM TWEEN DỊCH CHUYỂN TỐC ĐỘ 190
+local function TweenTo(targetCFrame)
+    if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+        if getgenv().LongTurboHub.BypassTP then
+            LP.Character.HumanoidRootPart.CFrame = targetCFrame
+        else
+            local dist = (LP.Character.HumanoidRootPart.Position - targetCFrame.Position).Magnitude
+            local speed = getgenv().LongTurboHub.TweenSpeed or 190
+            local tween = game:GetService("TweenService"):Create(
+                LP.Character.HumanoidRootPart,
+                TweenInfo.new(dist / speed, Enum.EasingStyle.Linear),
+                {CFrame = targetCFrame}
+            )
+            tween:Play()
+        end
+    end
+end
+
+-- 5. HÀM TÌM QUEST TỰ ĐỘNG DỰA TRÊN LEVEL HIỆN TẠI
+local function GetCurrentQuest()
+    local level = LP.Data.Level.Value
+    local currentQ = QuestData[1]
+    for reqLvl, qTable in pairs(QuestData) do
+        if level >= reqLvl then
+            if reqLvl >= currentQ.LevelReq then
+                currentQ = qTable
+                currentQ.LevelReq = reqLvl
+            end
+        end
+    end
+    return currentQ
+end
+
+-- ===================================================
+-- 6. CHƯƠNG TRÌNH LOOPS THỰC THI CHÍNH (LONGTURBO HUB)
+-- ===================================================
+
+-- [UPDATE 30] AUTO MAGNET EVENT (SĂN MAGNET TOKENS XX:00)
+task.spawn(function()
+    while task.wait(0.2) do
+        if getgenv().LongTurboHub.AutoFarmMagnetEvent then
+            pcall(function()
+                for _, mob in pairs(WS.Enemies:GetChildren()) do
+                    if (mob.Name:find("Magnetized") or mob:FindFirstChild("MagnetAura")) and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 and mob:FindFirstChild("HumanoidRootPart") then
+                        repeat
+                            task.wait()
+                            TweenTo(mob.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
+                            mob.HumanoidRootPart.Size = Vector3.new(50, 50, 50)
+                            mob.HumanoidRootPart.Transparency = 0.8
+                            mob.HumanoidRootPart.CanCollide = false
+                        until not getgenv().LongTurboHub.AutoFarmMagnetEvent or not mob.Parent or mob.Humanoid.Health <= 0
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- [UPDATE 30] AUTO ROLL MAGNET GACHA (MIDDLETOWN ZIOLES)
+task.spawn(function()
+    while task.wait(2) do
+        if getgenv().LongTurboHub.AutoRollMagnetGacha then
+            pcall(function()
+                CommF:InvokeServer("MagnetGacha", "Buy")
+            end)
+        end
+    end
+end)
+
+-- [LOGIC AUTO FARM LEVEL & AUTO QUEST]
+task.spawn(function()
+    while task.wait(0.1) do
+        if getgenv().LongTurboHub.AutoFarmLevel and not getgenv().LongTurboHub.AutoFarmMagnetEvent then
+            pcall(function()
+                local q = GetCurrentQuest()
+                local myQuest = LP.PlayerGui.Main.Quest
+                
+                -- Kiểm tra nhận Quest
+                if not myQuest.Visible or not string.find(myQuest.Container.QuestTitle.Title.Text, q.MobName) then
+                    TweenTo(q.CFrameQuest)
+                    if (LP.Character.HumanoidRootPart.Position - q.CFrameQuest.Position).Magnitude < 15 then
+                        CommF:InvokeServer("StartQuest", q.QuestName, 1)
+                    end
+                else
+                    -- Đã có Quest -> Gom quái (Mob Aura) và đánh
+                    local mobFound = false
+                    for _, mob in pairs(WS.Enemies:GetChildren()) do
+                        if mob.Name == q.MobName and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 and mob:FindFirstChild("HumanoidRootPart") then
+                            mobFound = true
+                            repeat
+                                task.wait()
+                                TweenTo(mob.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
+                                mob.HumanoidRootPart.Size = Vector3.new(50, 50, 50)
+                                mob.HumanoidRootPart.Transparency = 0.8
+                                mob.HumanoidRootPart.CanCollide = false
+                            until not getgenv().LongTurboHub.AutoFarmLevel or not mob.Parent or mob.Humanoid.Health <= 0
+                        end
+                    end
+                    if not mobFound then
+                        TweenTo(q.CFrameMob)
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- [LOGIC CỘNG ĐIỂM CHỈ SỐ AUTO]
+task.spawn(function()
+    while task.wait(0.5) do
+        if getgenv().LongTurboHub.AutoStats then
+            pcall(function()
+                local points = LP.Data.Points.Value
+                if points > 0 then
+                    CommF:InvokeServer("AddPoint", getgenv().LongTurboHub.SelectStat, points)
+                end
+            end)
+        end
+    end
+end)
+
+-- [LOGIC CẤT TRÁI ÁC QUỶ AUTO]
+task.spawn(function()
+    while task.wait(1) do
+        if getgenv().LongTurboHub.AutoStoreFruit then
+            pcall(function()
+                for _, item in pairs(LP.Backpack:GetChildren()) do
+                    if item:IsA("Tool") and string.find(item.Name, "Fruit") then
+                        CommF:InvokeServer("StoreFruit", item.Name, item)
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- [LOGIC KÉO CẦN GẠT TỘC V4]
+task.spawn(function()
+    while task.wait(1) do
+        if getgenv().LongTurboHub.AutoPullLever then
+            pcall(function()
+                CommF:InvokeServer("CheckLever")
+            end)
+        end
+    end
+end)
+
+-- 7. FAST ATTACK MEOZ
+task.spawn(function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-Meoz/LuaCyder-Meoz/refs/heads/main/BF-CheemBanana.lua"))()
+    end)
+end)
