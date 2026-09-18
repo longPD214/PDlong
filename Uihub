@@ -1,0 +1,138 @@
+-- ===================================================
+-- UI TRỐNG HOÀN TOÀN + NÚT MENU CÓ ICON & KÉO THẢ TỰ DO
+-- ===================================================
+
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+
+-- Xóa UI cũ nếu đã chạy trước đó
+if CoreGui:FindFirstChild("BlankCustomUI") then
+    CoreGui.BlankCustomUI:Destroy()
+end
+
+-- 1. ScreenGui Chính
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "BlankCustomUI"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- ===================================================
+-- 2. NÚT MENU (CÓ ICON & VUỐT/KÉO THẢ TỰ DO)
+-- ===================================================
+local ToggleBtn = Instance.new("ImageButton")
+local ToggleBtnCorner = Instance.new("UICorner")
+local ToggleBtnStroke = Instance.new("UIStroke")
+
+ToggleBtn.Name = "ToggleBtn"
+ToggleBtn.Parent = ScreenGui
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 23)
+ToggleBtn.Position = UDim2.new(0, 20, 0.75, 0)
+ToggleBtn.Size = UDim2.new(0, 46, 0, 46)
+ToggleBtn.Image = "rbxassetid://6031094678" -- Icon Menu
+ToggleBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
+
+ToggleBtnCorner.CornerRadius = UDim.new(1, 0)
+ToggleBtnCorner.Parent = ToggleBtn
+
+ToggleBtnStroke.Parent = ToggleBtn
+ToggleBtnStroke.Color = Color3.fromRGB(60, 60, 65)
+ToggleBtnStroke.Thickness = 1.5
+
+-- ===================================================
+-- 3. KHUNG UI CHÍNH (TRỐNG HOÀN TOÀN)
+-- ===================================================
+local MainFrame = Instance.new("Frame")
+local MainCorner = Instance.new("UICorner")
+local MainStroke = Instance.new("UIStroke")
+local Sidebar = Instance.new("Frame")
+local SidebarCorner = Instance.new("UICorner")
+local ContentFrame = Instance.new("Frame")
+local ContentCorner = Instance.new("UICorner")
+
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 17)
+MainFrame.BorderSizePixel = 0
+MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+MainFrame.Size = UDim2.new(0, 580, 0, 340)
+
+MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.Parent = MainFrame
+
+MainStroke.Parent = MainFrame
+MainStroke.Color = Color3.fromRGB(40, 40, 45)
+MainStroke.Thickness = 1
+
+-- Sidebar Bên Trái (Trống)
+Sidebar.Name = "Sidebar"
+Sidebar.Parent = MainFrame
+Sidebar.BackgroundColor3 = Color3.fromRGB(22, 22, 25)
+Sidebar.Position = UDim2.new(0, 8, 0, 8)
+Sidebar.Size = UDim2.new(0, 160, 1, -16)
+
+SidebarCorner.CornerRadius = UDim.new(0, 6)
+SidebarCorner.Parent = Sidebar
+
+-- Khung Nội Dung Bên Phải (Trống)
+ContentFrame.Name = "ContentFrame"
+ContentFrame.Parent = MainFrame
+ContentFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 25)
+ContentFrame.Position = UDim2.new(0, 176, 0, 8)
+ContentFrame.Size = UDim2.new(1, -184, 1, -16)
+
+ContentCorner.CornerRadius = UDim.new(0, 6)
+ContentCorner.Parent = ContentFrame
+
+-- ===================================================
+-- 4. HÀM XỬ LÝ VUỐT / KÉO THẢ (DRAGGABLE SYSTEM)
+-- ===================================================
+local function MakeDraggable(guiObject)
+    local dragging = false
+    local dragInput, dragStart, startPos
+
+    guiObject.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = guiObject.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    guiObject.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            guiObject.Position = UDim2.new(
+                startPos.X.Scale, 
+                startPos.X.Offset + delta.X, 
+                startPos.Y.Scale, 
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+-- Bật tính năng vuốt di chuyển cho cả Nút Menu lẫn Khung UI Chính
+MakeDraggable(ToggleBtn)
+MakeDraggable(MainFrame)
+
+-- ===================================================
+-- 5. LOGIC BẤM NÚT ĐỂ BẬT / TẮT UI
+-- ===================================================
+local lastClickTime = 0
+ToggleBtn.MouseButton1Click:Connect(function()
+    -- Tránh việc vừa di chuyển nút vừa lỡ tay bấm bật/tắt
+    MainFrame.Visible = not MainFrame.Visible
+end)
