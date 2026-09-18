@@ -1,0 +1,252 @@
+--// CẤU HÌNH VÀ BẢO MẬT KEY SYSTEM
+local GITHUB_RAW_URL = "https://raw.githubusercontent.com/longPD214/PDlong/refs/heads/main/Key-longturbohub.key" 
+local GITHUB_GET_KEY_URL = "https://raw.githubusercontent.com/longPD214/PDlong/refs/heads/main/Key-longturbohub.key" 
+local FILE_NAME = "longturbo_key_data.json"
+local EXPIRE_TIME = 86400 -- 24 tiếng (tính bằng giây)
+
+local MY_SECRET_KEY = "longturbo-12345678910-2014"
+pcall(function()
+    local downloadedKey = game:HttpGet(GITHUB_RAW_URL):gsub("%s+", "")
+    if downloadedKey and downloadedKey ~= "" then
+        MY_SECRET_KEY = downloadedKey
+    end
+end)
+
+local HttpService = game:GetService("HttpService")
+
+local function SaveKeyData(key)
+    if writefile then
+        writefile(FILE_NAME, HttpService:JSONEncode({Key = key, Time = os.time()}))
+    end
+end
+
+local function CheckSavedKey()
+    if isfile and isfile(FILE_NAME) then
+        local success, result = pcall(function()
+            return HttpService:JSONDecode(readfile(FILE_NAME))
+        end)
+        if success and result and result.Key and result.Time then
+            if (os.time() - result.Time) < EXPIRE_TIME and result.Key == MY_SECRET_KEY then
+                return true
+            else
+                delfile(FILE_NAME)
+            end
+        end
+    end
+    return false
+end
+
+--// HÀM CHẠY LOGIC CHÍNH
+local function InitMainHub()
+    local TweenService = game:GetService("TweenService")
+    local VirtualUser = game:GetService("VirtualUser")
+    local Players = game:GetService("Players")
+    local Workspace = game:GetService("Workspace")
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local LocalPlayer = Players.LocalPlayer
+
+    -- Anti-AFK Logic
+    task.spawn(function()
+        LocalPlayer.Idled:Connect(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end)
+    end)
+
+    -- Tải và kích hoạt Fast Attack từ CheemBanana Logic
+    task.spawn(function()
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-Meoz/LuaCyder-Meoz/refs/heads/main/BF-CheemBanana.lua"))()
+        end)
+    end)
+
+    -- Khởi tạo Visual UI Library
+    local Library = loadstring(game:HttpGet('https://raw.githubusercontent.com/VisualRoblox/Roblox/main/UI-Libraries/Visual%20UI%20Library/Source.lua'))()
+    local Window = Library:CreateWindow('longturboTV hub', 'Blox Fruits', 'longturboTV hub', 'rbxassetid://10618928818', false, 'VisualUIConfigs', 'Default')
+
+    -- Tạo các Tab giao diện
+    local MainTab = Window:CreateTab('Main Farm', true, 'rbxassetid://3926305904', Vector2.new(484, 44), Vector2.new(36, 36))
+    local ItemTab = Window:CreateTab('Auto Item & Material', false, 'rbxassetid://3926305904', Vector2.new(484, 44), Vector2.new(36, 36))
+    local CakeTab = Window:CreateTab('Cake Prince & Dough King', false, 'rbxassetid://3926305904', Vector2.new(484, 44), Vector2.new(36, 36))
+    local SeaTab = Window:CreateTab('Sea Quests', false, 'rbxassetid://3926305904', Vector2.new(484, 44), Vector2.new(36, 36))
+
+    -- Biến trạng thái Logic
+    _G.AutoFarmLevel = false
+    _G.AutoQuest = false
+    _G.AutoFarmBone = false
+    _G.AutoRandomBone = false
+    _G.AutoFarmMaterial = false
+    _G.SelectedMaterial = "Bones"
+    _G.AutoCakePrince = false
+    _G.AutoDoughKing = false
+    _G.AutoSea1ToSea2 = false
+    _G.AutoSea2ToSea3 = false
+    _G.TweenSpeed = 190
+
+    -- Danh sách Quái theo Nguyên liệu
+    local MaterialMobs = {
+        ["Bones"] = {"Reborn Skeleton", "Living Zombie", "Demonic Soul", "Posseessed Mummy"},
+        ["Conjured Cocoa"] = {"Cocoa Warrior", "Chocolate Bar Battler"},
+        ["Dragon Scale"] = {"Dragon Crew Archer", "Dragon Crew Warrior"},
+        ["Fish Tail"] = {"Fishman Warrior", "Fishman Commando", "Fishman Raider", "Fishman Captain"},
+        ["Angel Wings"] = {"God's Guard", "Shanda", "Royal Squad"},
+        ["Magma Ore"] = {"Military Soldier", "Military Spy", "Magma Ninja"},
+        ["Leather"] = {"Pirate", "Brute"},
+        ["Gunpowder"] = {"Pistol Billionaire", "Mercenary"}
+    }
+
+    -- Logic Gom Quái (Magnet Mobs)
+    local function MagnetEnemies(targetPos, mobNames)
+        for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+            if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+                local isTarget = false
+                if type(mobNames) == "table" then
+                    for _, name in ipairs(mobNames) do
+                        if string.find(enemy.Name, name) then isTarget = true; break end
+                    end
+                elseif type(mobNames) == "string" and string.find(enemy.Name, mobNames) then
+                    isTarget = true
+                end
+
+                if isTarget and (enemy.HumanoidRootPart.Position - targetPos).Magnitude <= 350 then
+                    enemy.HumanoidRootPart.CFrame = CFrame.new(targetPos)
+                    enemy.HumanoidRootPart.CanCollide = false
+                    enemy.Humanoid.WalkSpeed = 0
+                end
+            end
+        end
+    end
+
+    -- 1. TAB MAIN (Auto Farm Level & Quest)
+    MainTab:CreateToggle('Auto Farm Level', false, function(Val) _G.AutoFarmLevel = Val end)
+    MainTab:CreateToggle('Auto nhận Quest', false, function(Val) _G.AutoQuest = Val end)
+    MainTab:CreateSlider('Tốc độ Tween', 100, 250, 190, Color3.fromRGB(255, 255, 255), function(Val) _G.TweenSpeed = Val end)
+
+    -- 2. TAB AUTO ITEM & MATERIAL
+    ItemTab:CreateToggle('Auto Farm Bone', false, function(Val) _G.AutoFarmBone = Val end)
+    ItemTab:CreateToggle('Auto Gacha Bone (Death King)', false, function(Val) _G.AutoRandomBone = Val end)
+    ItemTab:CreateDropdown('Chọn loại Nguyên Liệu', {"Bones", "Conjured Cocoa", "Dragon Scale", "Fish Tail", "Angel Wings", "Magma Ore", "Leather", "Gunpowder"}, function(Val)
+        _G.SelectedMaterial = Val
+    end)
+    ItemTab:CreateToggle('Auto Farm Nguyên Liệu đã chọn', false, function(Val) _G.AutoFarmMaterial = Val end)
+
+    -- Loop Auto Farm Material Logic
+    task.spawn(function()
+        while task.wait() do
+            if _G.AutoFarmMaterial then
+                pcall(function()
+                    local targets = MaterialMobs[_G.SelectedMaterial]
+                    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if hrp and targets then
+                        for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                            for _, mobName in ipairs(targets) do
+                                if string.find(enemy.Name, mobName) and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                                    repeat
+                                        task.wait()
+                                        if not _G.AutoFarmMaterial then break end
+                                        local targetCFrame = enemy.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0)
+                                        local dist = (hrp.Position - targetCFrame.Position).Magnitude
+                                        TweenService:Create(hrp, TweenInfo.new(dist / _G.TweenSpeed, Enum.EasingStyle.Linear), {CFrame = targetCFrame}):Play()
+                                        MagnetEnemies(enemy.HumanoidRootPart.Position, targets)
+                                        VirtualUser:CaptureController()
+                                        VirtualUser:Button1Down(Vector2.new())
+                                    until not enemy or not enemy:FindFirstChild("Humanoid") or enemy.Humanoid.Health <= 0 or not _G.AutoFarmMaterial
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+        end
+    end)
+
+    -- 3. TAB CAKE PRINCE & DOUGH KING
+    local StatusLabel = CakeTab:CreateLabel('Tiến trình Cake: Đang cập nhật...')
+    CakeTab:CreateToggle('Auto Cake Prince', false, function(Val) _G.AutoCakePrince = Val end)
+    CakeTab:CreateToggle('Auto Dough King', false, function(Val) _G.AutoDoughKing = Val end)
+
+    -- Đếm tiến trình NPC Drip Mama
+    task.spawn(function()
+        while task.wait(3) do
+            pcall(function()
+                local status = ReplicatedStorage.Remotes.CommF_:InvokeServer("CakePrinceSpawner")
+                if status then
+                    StatusLabel:UpdateText("Tiến trình Cake: " .. tostring(status))
+                end
+            end)
+        end
+    end)
+
+    -- Loop Farm Cake Prince / Dough King Logic
+    task.spawn(function()
+        while task.wait() do
+            if _G.AutoCakePrince or _G.AutoDoughKing then
+                pcall(function()
+                    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if not hrp then return end
+
+                    local boss = Workspace.Enemies:FindFirstChild("Cake Prince") or Workspace.Enemies:FindFirstChild("Dough King")
+                    if boss and boss:FindFirstChild("Humanoid") and boss.Humanoid.Health > 0 then
+                        -- Tiến hành tiêu diệt Boss
+                        repeat
+                            task.wait()
+                            if not (_G.AutoCakePrince or _G.AutoDoughKing) then break end
+                            local targetCFrame = boss.HumanoidRootPart.CFrame * CFrame.new(0, 12, 0)
+                            local dist = (hrp.Position - targetCFrame.Position).Magnitude
+                            TweenService:Create(hrp, TweenInfo.new(dist / _G.TweenSpeed, Enum.EasingStyle.Linear), {CFrame = targetCFrame}):Play()
+                            VirtualUser:CaptureController()
+                            VirtualUser:Button1Down(Vector2.new())
+                        until not boss or not boss:FindFirstChild("Humanoid") or boss.Humanoid.Health <= 0
+                    else
+                        -- Đánh 500 quái mở Cổng Boss
+                        local cakeMobs = {"Cookie Crafter", "Cake Guard", "Baking Staff", "Head Baker"}
+                        for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                            for _, mobName in ipairs(cakeMobs) do
+                                if enemy.Name == mobName and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                                    repeat
+                                        task.wait()
+                                        if not (_G.AutoCakePrince or _G.AutoDoughKing) then break end
+                                        local targetCFrame = enemy.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0)
+                                        local dist = (hrp.Position - targetCFrame.Position).Magnitude
+                                        TweenService:Create(hrp, TweenInfo.new(dist / _G.TweenSpeed, Enum.EasingStyle.Linear), {CFrame = targetCFrame}):Play()
+                                        MagnetEnemies(enemy.HumanoidRootPart.Position, cakeMobs)
+                                        VirtualUser:CaptureController()
+                                        VirtualUser:Button1Down(Vector2.new())
+                                    until not enemy or not enemy:FindFirstChild("Humanoid") or enemy.Humanoid.Health <= 0
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+        end
+    end)
+
+    -- 4. TAB SEA QUESTS
+    SeaTab:CreateToggle('Auto Quest Sea 1 -> Sea 2', false, function(Val) _G.AutoSea1ToSea2 = Val end)
+    SeaTab:CreateToggle('Auto Quest Sea 2 -> Sea 3', false, function(Val) _G.AutoSea2ToSea3 = Val end)
+end
+
+--// XÁC THỰC KEY SYSTEM
+if CheckSavedKey() then
+    print("[longturboTV Hub] Key hợp lệ! Mở Hub...")
+    InitMainHub()
+else
+    local Library = loadstring(game:HttpGet('https://raw.githubusercontent.com/VisualRoblox/Roblox/main/UI-Libraries/Visual%20UI%20Library/Source.lua'))()
+    local KeyWindow = Library:CreateWindow('Key System', 'Xác thực người dùng (Hạn 24h)', 'Key System', 'rbxassetid://10618928818', false, 'VisualUIConfigs', 'Default')
+    local KeyTab = KeyWindow:CreateTab('Get Key', true, 'rbxassetid://3926305904', Vector2.new(484, 44), Vector2.new(36, 36))
+
+    local KeyInputted = ""
+    KeyTab:CreateButton('Get Key (Copy Link GitHub)', function()
+        setclipboard(GITHUB_GET_KEY_URL)
+    end)
+    KeyTab:CreateTextBox('Nhập Key tại đây', function(Value)
+        KeyInputted = Value
+    end)
+    KeyTab:CreateButton('Xác nhận Key', function()
+        if KeyInputted == MY_SECRET_KEY then
+            SaveKeyData(KeyInputted)
+            InitMainHub()
+        end
+    end)
+end
