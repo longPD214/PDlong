@@ -1,0 +1,265 @@
+--====================================================--
+-- LONGTURBO HUB UI LIBRARY (CHUẨN GIAO DIỆN KHUNG CARD)
+--====================================================--
+local LongTurboUI = {}
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+
+function LongTurboUI:CreateWindow(Config)
+    local Window = {}
+    
+    if CoreGui:FindFirstChild("LongTurboHubUI") then
+        CoreGui.LongTurboHubUI:Destroy()
+    end
+
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "LongTurboHubUI"
+    ScreenGui.Parent = CoreGui
+    ScreenGui.ResetOnSpawn = false
+
+    -- Nút Bật/Tắt Menu (Floating Button)
+    local ToggleBtn = Instance.new("ImageButton", ScreenGui)
+    ToggleBtn.Name = "ToggleLongTurbo"
+    ToggleBtn.Size = UDim2.new(0, 42, 0, 42)
+    ToggleBtn.Position = UDim2.new(0, 15, 0.15, 0)
+    ToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
+    ToggleBtn.Image = "rbxassetid://18751483361"
+    Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
+
+    local ToggleStroke = Instance.new("UIStroke", ToggleBtn)
+    ToggleStroke.Color = Color3.fromRGB(0, 140, 255)
+    ToggleStroke.Thickness = 1.5
+
+    -- Khung Main
+    local Main = Instance.new("Frame", ScreenGui)
+    Main.Name = "MainFrame"
+    Main.Size = UDim2.new(0, 620, 0, 360)
+    Main.Position = UDim2.new(0.5, -310, 0.5, -180)
+    Main.BackgroundColor3 = Color3.fromRGB(15, 15, 19)
+    Main.BorderSizePixel = 0
+    Main.ClipsDescendants = true
+    Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
+
+    -- Toggle Menu
+    ToggleBtn.MouseButton1Click:Connect(function()
+        Main.Visible = not Main.Visible
+    end)
+
+    -- Drag Menu
+    local Dragging, DragStart, StartPos
+    Main.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            Dragging = true; DragStart = input.Position; StartPos = Main.Position
+        end
+    end)
+    Main.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then Dragging = false end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - DragStart
+            Main.Position = UDim2.new(StartPos.X.Scale, StartPos.X.Offset + delta.X, StartPos.Y.Scale, StartPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    -- Sidebar & Search Bar
+    local Sidebar = Instance.new("Frame", Main)
+    Sidebar.Size = UDim2.new(0, 165, 1, 0)
+    Sidebar.BackgroundColor3 = Color3.fromRGB(12, 12, 15)
+
+    local SearchBox = Instance.new("TextBox", Sidebar)
+    SearchBox.Size = UDim2.new(1, -16, 0, 26)
+    SearchBox.Position = UDim2.new(0, 8, 0, 8)
+    SearchBox.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+    SearchBox.Text = ""
+    SearchBox.PlaceholderText = "🔍 search section or Func"
+    SearchBox.PlaceholderColor3 = Color3.fromRGB(110, 110, 130)
+    SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SearchBox.Font = Enum.Font.SourceSans
+    SearchBox.TextSize = 12
+    SearchBox.TextXAlignment = Enum.TextXAlignment.Left
+    Instance.new("UICorner", SearchBox).CornerRadius = UDim.new(0, 5)
+    Instance.new("UIPadding", SearchBox).PaddingLeft = UDim.new(0, 6)
+
+    local TabScroll = Instance.new("ScrollingFrame", Sidebar)
+    TabScroll.Size = UDim2.new(1, 0, 1, -40)
+    TabScroll.Position = UDim2.new(0, 0, 0, 40)
+    TabScroll.BackgroundTransparency = 1
+    TabScroll.ScrollBarThickness = 2
+    Instance.new("UIListLayout", TabScroll).Padding = UDim.new(0, 2)
+
+    -- Header Title
+    local HeaderTitle = Instance.new("TextLabel", Main)
+    HeaderTitle.Size = UDim2.new(1, -180, 0, 32)
+    HeaderTitle.Position = UDim2.new(0, 175, 0, 0)
+    HeaderTitle.Text = Config.Title or "LongTurbo Hub | Blox Fruits"
+    HeaderTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    HeaderTitle.Font = Enum.Font.SourceSansBold
+    HeaderTitle.TextSize = 15
+    HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
+    HeaderTitle.BackgroundTransparency = 1
+
+    local ContainerFolder = Instance.new("Frame", Main)
+    ContainerFolder.Size = UDim2.new(1, -180, 1, -38)
+    ContainerFolder.Position = UDim2.new(0, 170, 0, 32)
+    ContainerFolder.BackgroundTransparency = 1
+
+    local Tabs = {}
+    local FirstTab = true
+
+    function Window:CreateTab(TabName)
+        local TabObj = {}
+
+        local TabBtn = Instance.new("TextButton", TabScroll)
+        TabBtn.Size = UDim2.new(1, -10, 0, 26)
+        TabBtn.Position = UDim2.new(0, 5, 0, 0)
+        TabBtn.BackgroundColor3 = Color3.fromRGB(12, 12, 15)
+        TabBtn.Text = "  │  " .. TabName
+        TabBtn.TextColor3 = Color3.fromRGB(150, 150, 165)
+        TabBtn.Font = Enum.Font.SourceSans
+        TabBtn.TextSize = 13
+        TabBtn.TextXAlignment = Enum.TextXAlignment.Left
+        Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 4)
+
+        local TabPage = Instance.new("ScrollingFrame", ContainerFolder)
+        TabPage.Size = UDim2.new(1, -5, 1, 0)
+        TabPage.BackgroundTransparency = 1
+        TabPage.Visible = false
+        TabPage.ScrollBarThickness = 3
+        Instance.new("UIListLayout", TabPage).Padding = UDim.new(0, 10)
+
+        if FirstTab then
+            FirstTab = false
+            TabPage.Visible = true
+            TabBtn.BackgroundColor3 = Color3.fromRGB(24, 24, 32)
+            TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        end
+
+        TabBtn.MouseButton1Click:Connect(function()
+            for _, t in pairs(Tabs) do
+                t.Page.Visible = false
+                t.Btn.BackgroundColor3 = Color3.fromRGB(12, 12, 15)
+                t.Btn.TextColor3 = Color3.fromRGB(150, 150, 165)
+            end
+            TabPage.Visible = true
+            TabBtn.BackgroundColor3 = Color3.fromRGB(24, 24, 32)
+            TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        end)
+
+        table.insert(Tabs, {Btn = TabBtn, Page = TabPage})
+
+        -- HÀM TẠO KHUNG CARD CONTAINER
+        function TabObj:AddCard(Title)
+            local CardObj = {}
+
+            local Card = Instance.new("Frame", TabPage)
+            Card.Size = UDim2.new(1, -10, 0, 30)
+            Card.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
+            Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 6)
+            
+            local CardStroke = Instance.new("UIStroke", Card)
+            CardStroke.Color = Color3.fromRGB(32, 32, 42)
+
+            local CardTitle = Instance.new("TextLabel", Card)
+            CardTitle.Size = UDim2.new(1, 0, 0, 26)
+            CardTitle.Text = Title or ""
+            CardTitle.TextColor3 = Color3.fromRGB(200, 200, 220)
+            CardTitle.Font = Enum.Font.SourceSansBold
+            CardTitle.TextSize = 13
+            CardTitle.BackgroundTransparency = 1
+
+            local CardContent = Instance.new("Frame", Card)
+            CardContent.Size = UDim2.new(1, 0, 1, -26)
+            CardContent.Position = UDim2.new(0, 0, 0, 26)
+            CardContent.BackgroundTransparency = 1
+
+            local CardList = Instance.new("UIListLayout", CardContent)
+            CardList.Padding = UDim.new(0, 6)
+            CardList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+            local function UpdateSize()
+                local totalHeight = CardList.AbsoluteContentSize.Y + 36
+                Card.Size = UDim2.new(1, -10, 0, totalHeight)
+            end
+            CardList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(UpdateSize)
+
+            function CardObj:AddButton(Text, SubText, BtnText, Callback)
+                local Frame = Instance.new("Frame", CardContent)
+                Frame.Size = UDim2.new(1, -16, 0, 38)
+                Frame.BackgroundTransparency = 1
+
+                local Label = Instance.new("TextLabel", Frame)
+                Label.Size = UDim2.new(0.65, 0, 1, 0)
+                Label.Text = Text
+                Label.TextColor3 = Color3.fromRGB(240, 240, 240)
+                Label.Font = Enum.Font.SourceSans
+                Label.TextSize = 13
+                Label.TextXAlignment = Enum.TextXAlignment.Left
+                Label.BackgroundTransparency = 1
+
+                local Btn = Instance.new("TextButton", Frame)
+                Btn.Size = UDim2.new(0, 75, 0, 26)
+                Btn.Position = UDim2.new(1, -75, 0.5, -13)
+                Btn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+                Btn.Text = BtnText or "Click"
+                Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                Btn.Font = Enum.Font.SourceSansBold
+                Btn.TextSize = 12
+                Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 5)
+
+                Btn.MouseButton1Click:Connect(function()
+                    if Callback then Callback() end
+                end)
+            end
+
+            function CardObj:AddLabel(Text, Color)
+                local Frame = Instance.new("Frame", CardContent)
+                Frame.Size = UDim2.new(1, -16, 0, 24)
+                Frame.BackgroundTransparency = 1
+
+                local Label = Instance.new("TextLabel", Frame)
+                Label.Size = UDim2.new(1, 0, 1, 0)
+                Label.Text = Text
+                Label.TextColor3 = Color or Color3.fromRGB(220, 80, 80)
+                Label.Font = Enum.Font.SourceSans
+                Label.TextSize = 12
+                Label.TextXAlignment = Enum.TextXAlignment.Left
+                Label.BackgroundTransparency = 1
+            end
+
+            return CardObj
+        end
+
+        return TabObj
+    end
+
+    return Window
+end
+
+--====================================================--
+-- TẠO GIAO DIỆN LONGTURBO HUB
+--====================================================--
+local Window = LongTurboUI:CreateWindow({Title = "LongTurbo Hub | Blox Fruits"})
+
+local DiscordTab = Window:CreateTab("Discord")
+Window:CreateTab("Shop")
+Window:CreateTab("Farm")
+Window:CreateTab("Hop Farm")
+Window:CreateTab("Stack Farming")
+Window:CreateTab("PVP")
+Window:CreateTab("Fishing/Slap Fish")
+Window:CreateTab("Esp")
+Window:CreateTab("Quest And Item")
+Window:CreateTab("Fruits / Raid")
+
+-- Card 1: LongTurbo Hub | Community
+local Card1 = DiscordTab:AddCard("LongTurbo Hub | Community")
+Card1:AddLabel("  Join our discord community to receive information about the next update", Color3.fromRGB(160, 160, 180))
+Card1:AddButton("Copy Link Discord", "", "Click", function()
+    if setclipboard then setclipboard("https://discord.gg/longturbo") end
+end)
+
+-- Card 2: Debug Farm
+local Card2 = DiscordTab:AddCard("Debug Farm")
+Card2:AddLabel("  🔴 Hiện tại không có chức năng nào được kích hoạt.", Color3.fromRGB(230, 80, 80))
+                
